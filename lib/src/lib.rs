@@ -229,7 +229,7 @@ mod tests {
     fn wallet_signature_verifies_under_the_chain_context() {
         let public = schnorrkel::MiniSecretKey::from_bytes(&[0; 32])
             .unwrap()
-            .expand_to_keypair(schnorrkel::ExpandMode::Ed25519)
+            .expand_to_keypair(schnorrkel::ExpansionMode::Ed25519)
             .public;
         let signature = schnorrkel::Signature::from_bytes(&hex::decode(
             "80b03ed44f921841e61da3509cb093bf7ffc65bf4650a1c57d2115dcf317085694d0da297858bea6d1aa1e929261a1cc32ab878333473a0e62dc1ec848add481",
