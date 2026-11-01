@@ -1,0 +1,16 @@
+[package]
+name = "fixture-resign"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+smoldot = { path = "../../lib" }
+serde_json = "1"
+hex = "0.4"
+schnorrkel = "0.11"
+blake2-rfc = "0.2"
+twox-hash = { version = "2", features = ["xxhash64"] }
+
+# Standalone: run by hand when the runtime_call fixtures change, never part of the build.
+[workspace]

@@ -24,355 +24,87 @@ use core::{num::NonZero, time::Duration};
 use super::{Config, HeaderVerifySuccess, NonFinalizedTree};
 use crate::{chain::chain_information, header};
 
+/// Two consecutive Zagros relay chain blocks, #526431 and #526432, inserted on top of #526430
+/// as the finalized block, with the BABE epochs and GRANDPA set the chain reports at #526430.
 #[test]
-fn polkadot_blocks_0_to_2() {
+fn zagros_two_blocks_after_finalized() {
+    fn hex32(s: &str) -> [u8; 32] {
+        <[u8; 32]>::try_from(hex::decode(s).unwrap()).unwrap()
+    }
+
+    let finalized = hex::decode("d06f57b59c57f5df4f6e9b27f9281593c9443b0657bcac0f4ff2efc47ab087417a212000fa09b0a7225fe08a62819073739d145a7e018fb25f9bd0f0198011adfcdcce7590cebb8488781704141f41b65b22d41e0b1a96704c29b48ecf9df7a86f2fc56f0c0642414245b501030c0000008a49d111000000008a7a5f3c07ba91d21bad058b6814c16b70081a98c47993c435d4e14c0cb66316557d8569ae839f5b6ef993cf16266aa1e3c0769cfc13f6d4954015acd66f870c5cfa23fcfe510a6795d67bd4e56e09d9bfcc09433e6af03cfa448b81b87df00604424545468403ba87fbe133080a9d56639fd61d4f91a206ef67dcc71a99bc810ccff08ba78c4805424142450101e4395de4a1f35926bdc597bdb55ddb6d1bc76140b442fa1afcd3e16520e5c250708f2b32c3ebd45ea0539fe71f404cb7febd896848e1a355cc3afae9cc306287").unwrap();
+    let block1 = hex::decode("ffea9bfb4f7289369984d722f55b42da77726c408217b51cdb92da77a7e748697e21200044d83ef4d3e2b2b7e4a2c5f6e56bdd843f5d2debcfcec43fb70d0a0bf39bb9d898ff424bb097ffb49d1a1ac376c335abf19d95609161ac587c43bb69fdc816470c0642414245b50103050000008b49d111000000002e6cbbcfdf73a142e647f8da60948f9ed206c59d717609778db89c30dd674f4b09631b1470bc14a2035330763bb361978be6912e3a4de1efa84b52c2d876f70495e190ededed7370403ab0043ae3fe4b9d2a3fde3085d2cc8971f5f09c00110f04424545468403c6c95ba118a9aa26aab5ecfee54fb1380e9485f6396cf2e30aa8a6e4ee3674e90542414245010122caa153471872c4eb429d08a385a618d3b75aea0209e67b5101d1d8f31d744135c65135f31aae35492c5d3a6edeeee16ea7bcb98d4445976f9ca7222c28118f").unwrap();
+    let block2 = hex::decode("5fcccc4f9eb7ec1d05fffccf234426a86aaffbff8a83fc265ab7cffbb078671d822120000925ad7dacedd626b68bf94c8128138f8d360ac39389de621a5e2b8c7807e10ded337742a32212ea34c7aa5e72d422ea5f3bee9c047f81ecc94c56792a40aedd0c0642414245b501030c0000008c49d111000000000a56c264b6bd3432d561b00f932ae27092110dff62c014989edbfff40d29f172dd35673123df0a3820569109347610eb0973166945f1bfa4dfa4f20378b92404a3d05206276d05b2efffc7845d1dbfa76c774ec9660e7b8f625f2417d664f80c04424545468403aa34f6b4ea6452753fd87a183c5f712cd77ea4638fed8c2ed68d79ad521e0702054241424501019ea0cd7303e48b965dde1be3dfd2098975d70e516be4a99385051c693eb1720be2b3b9b553305da868502d94ab180f2b7a2220085f26c178391931fe4c803789").unwrap();
+
     let mut tree = NonFinalizedTree::new(Config {
         chain_information: chain_information::ChainInformation {
-            finalized_block_header: Box::new(header::Header {
-                parent_hash: [
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                ],
-                number: 0,
-                state_root: [
-                    41, 208, 217, 114, 205, 39, 203, 197, 17, 233, 88, 159, 203, 122, 69, 6, 213,
-                    235, 106, 158, 141, 242, 5, 240, 4, 114, 229, 171, 53, 74, 78, 23,
-                ],
-                extrinsics_root: [
-                    3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177,
-                    87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
-                ],
-                digest: header::Digest::from(header::DigestRef::empty()),
-            }),
-            consensus: chain_information::ChainInformationConsensus::Babe {
-                slots_per_epoch: NonZero::<u64>::new(2400).unwrap(),
-                finalized_block_epoch_information: None,
-                finalized_next_epoch_transition: Box::new(
-                    chain_information::BabeEpochInformation {
-                        epoch_index: 0,
-                        start_slot_number: None,
-                        authorities: vec![
-                            header::BabeAuthority {
-                                public_key: [
-                                    250, 52, 55, 177, 15, 110, 122, 248, 243, 19, 98, 223, 58, 23,
-                                    155, 153, 26, 140, 86, 49, 61, 27, 205, 99, 7, 164, 208, 199,
-                                    52, 193, 174, 49,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    210, 65, 155, 200, 131, 84, 147, 172, 137, 235, 9, 213, 152,
-                                    82, 129, 245, 223, 244, 188, 108, 122, 126, 169, 136, 253, 35,
-                                    175, 5, 243, 1, 88, 10,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    204, 182, 190, 246, 13, 239, 195, 7, 36, 84, 93, 87, 68, 3,
-                                    148, 237, 28, 113, 234, 126, 230, 216, 128, 237, 14, 121, 135,
-                                    26, 5, 181, 228, 6,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    94, 103, 182, 76, 240, 125, 77, 37, 138, 71, 223, 99, 131, 81,
-                                    33, 66, 53, 81, 113, 40, 68, 245, 182, 125, 230, 142, 54, 187,
-                                    154, 33, 225, 39,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    98, 54, 135, 123, 5, 55, 2, 101, 100, 12, 19, 63, 236, 7, 230,
-                                    77, 124, 168, 35, 219, 29, 197, 111, 45, 53, 132, 179, 215,
-                                    192, 241, 97, 88,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    108, 82, 208, 45, 149, 195, 10, 165, 103, 253, 162, 132, 172,
-                                    242, 80, 37, 202, 116, 112, 240, 176, 197, 22, 221, 249, 68,
-                                    117, 161, 128, 124, 77, 37,
-                                ],
-                                weight: 1,
-                            },
-                        ],
-                        randomness: [
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                        ],
-                        c: (1, 4),
-                        allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryVrfSlots,
-                    },
-                ),
-            },
-            finality: chain_information::ChainInformationFinality::Grandpa {
-                after_finalized_block_authorities_set_id: 0,
-                finalized_triggered_authorities: vec![
-                    header::GrandpaAuthority {
-                        public_key: [
-                            222, 166, 244, 167, 39, 211, 178, 57, 146, 117, 214, 238, 136, 23, 136,
-                            31, 16, 89, 116, 113, 220, 29, 39, 241, 68, 41, 90, 214, 251, 147, 60,
-                            122,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            72, 182, 35, 148, 28, 42, 77, 65, 207, 37, 239, 73, 84, 8, 105, 15,
-                            200, 83, 247, 119, 25, 36, 152, 192, 146, 46, 171, 30, 157, 244, 240,
-                            97,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            247, 45, 175, 46, 86, 14, 79, 15, 34, 251, 92, 187, 4, 173, 29, 127,
-                            238, 133, 10, 171, 35, 143, 208, 20, 193, 120, 118, 158, 126, 58, 155,
-                            132,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            28, 21, 28, 17, 203, 114, 51, 77, 38, 215, 7, 105, 227, 175, 123, 191,
-                            243, 128, 26, 78, 45, 202, 43, 9, 183, 204, 224, 175, 141, 216, 19, 7,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            104, 13, 39, 130, 19, 249, 8, 101, 138, 73, 161, 2, 90, 127, 70, 108,
-                            25, 126, 143, 182, 250, 187, 94, 98, 34, 10, 123, 215, 95, 134, 12,
-                            171,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            142, 89, 54, 135, 0, 234, 137, 226, 191, 137, 34, 204, 158, 75, 134,
-                            214, 101, 29, 28, 104, 154, 13, 87, 129, 63, 151, 104, 219, 170, 222,
-                            207, 113,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                ],
-                finalized_scheduled_change: None,
-            },
-        }
-        .try_into()
-        .unwrap(),
-        blocks_capacity: 8,
-        block_number_bytes: 4,
-        allow_unknown_consensus_engines: false,
-    });
-
-    let block1 = vec![
-        145, 177, 113, 187, 21, 142, 45, 56, 72, 250, 35, 169, 241, 194, 81, 130, 251, 142, 32, 49,
-        59, 44, 30, 180, 146, 25, 218, 122, 112, 206, 144, 195, 4, 197, 111, 205, 110, 122, 117,
-        121, 38, 172, 227, 225, 236, 255, 155, 64, 16, 252, 120, 185, 13, 69, 146, 2, 163, 57, 38,
-        106, 127, 99, 96, 0, 47, 154, 135, 246, 175, 100, 239, 151, 175, 242, 211, 27, 235, 253,
-        213, 159, 143, 226, 239, 96, 25, 39, 139, 99, 75, 37, 21, 163, 143, 28, 76, 36, 32, 12, 6,
-        66, 65, 66, 69, 181, 1, 1, 0, 0, 0, 0, 147, 222, 204, 15, 0, 0, 0, 0, 54, 46, 216, 214, 5,
-        86, 69, 72, 127, 228, 46, 156, 134, 64, 190, 101, 31, 112, 163, 162, 160, 54, 88, 4, 107,
-        43, 67, 240, 33, 102, 87, 4, 80, 26, 249, 177, 202, 110, 151, 76, 37, 126, 61, 38, 96, 155,
-        95, 104, 181, 176, 161, 218, 83, 247, 242, 82, 187, 229, 217, 73, 72, 195, 151, 5, 201,
-        143, 250, 75, 134, 157, 212, 74, 194, 149, 40, 227, 114, 61, 97, 156, 199, 237, 241, 211,
-        247, 183, 165, 122, 149, 127, 106, 126, 155, 219, 39, 10, 4, 66, 65, 66, 69, 73, 4, 1, 24,
-        250, 52, 55, 177, 15, 110, 122, 248, 243, 19, 98, 223, 58, 23, 155, 153, 26, 140, 86, 49,
-        61, 27, 205, 99, 7, 164, 208, 199, 52, 193, 174, 49, 1, 0, 0, 0, 0, 0, 0, 0, 210, 65, 155,
-        200, 131, 84, 147, 172, 137, 235, 9, 213, 152, 82, 129, 245, 223, 244, 188, 108, 122, 126,
-        169, 136, 253, 35, 175, 5, 243, 1, 88, 10, 1, 0, 0, 0, 0, 0, 0, 0, 204, 182, 190, 246, 13,
-        239, 195, 7, 36, 84, 93, 87, 68, 3, 148, 237, 28, 113, 234, 126, 230, 216, 128, 237, 14,
-        121, 135, 26, 5, 181, 228, 6, 1, 0, 0, 0, 0, 0, 0, 0, 94, 103, 182, 76, 240, 125, 77, 37,
-        138, 71, 223, 99, 131, 81, 33, 66, 53, 81, 113, 40, 68, 245, 182, 125, 230, 142, 54, 187,
-        154, 33, 225, 39, 1, 0, 0, 0, 0, 0, 0, 0, 98, 54, 135, 123, 5, 55, 2, 101, 100, 12, 19, 63,
-        236, 7, 230, 77, 124, 168, 35, 219, 29, 197, 111, 45, 53, 132, 179, 215, 192, 241, 97, 88,
-        1, 0, 0, 0, 0, 0, 0, 0, 108, 82, 208, 45, 149, 195, 10, 165, 103, 253, 162, 132, 172, 242,
-        80, 37, 202, 116, 112, 240, 176, 197, 22, 221, 249, 68, 117, 161, 128, 124, 77, 37, 1, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 5, 66, 65, 66, 69, 1, 1, 212, 104, 104, 12, 132, 75, 25, 25, 77,
-        77, 251, 220, 102, 151, 163, 91, 242, 180, 148, 189, 162, 197, 166, 150, 29, 77, 78, 172,
-        251, 247, 69, 116, 55, 155, 160, 217, 123, 91, 182, 80, 194, 232, 103, 10, 99, 121, 26,
-        114, 121, 67, 188, 182, 153, 220, 122, 34, 139, 219, 158, 10, 152, 201, 208, 137,
-    ];
-
-    let block2 = vec![
-        192, 9, 99, 88, 83, 78, 200, 210, 29, 1, 211, 75, 131, 110, 237, 71, 106, 28, 52, 63, 135,
-        36, 250, 33, 83, 220, 7, 37, 173, 121, 122, 144, 8, 85, 55, 218, 60, 103, 78, 2, 10, 176,
-        179, 225, 183, 0, 154, 97, 43, 138, 222, 224, 104, 10, 126, 97, 3, 44, 219, 227, 236, 94,
-        34, 17, 190, 156, 234, 173, 148, 161, 214, 207, 170, 62, 116, 246, 169, 244, 255, 178, 243,
-        150, 24, 78, 13, 56, 242, 6, 44, 174, 255, 65, 103, 51, 114, 121, 43, 8, 6, 66, 65, 66, 69,
-        181, 1, 1, 1, 0, 0, 0, 152, 222, 204, 15, 0, 0, 0, 0, 68, 63, 119, 185, 238, 85, 22, 152,
-        35, 197, 11, 218, 203, 234, 24, 167, 79, 160, 103, 58, 175, 151, 224, 30, 122, 217, 103,
-        94, 252, 171, 54, 118, 80, 124, 210, 23, 130, 125, 198, 216, 66, 26, 245, 1, 43, 239, 186,
-        217, 142, 38, 119, 133, 215, 6, 130, 115, 135, 48, 106, 35, 164, 135, 213, 1, 53, 129, 112,
-        83, 84, 15, 67, 161, 176, 248, 239, 145, 115, 80, 47, 215, 100, 243, 17, 106, 176, 133, 91,
-        183, 94, 158, 31, 42, 136, 128, 98, 12, 5, 66, 65, 66, 69, 1, 1, 48, 255, 112, 94, 54, 208,
-        26, 138, 9, 200, 2, 10, 46, 98, 24, 167, 215, 23, 117, 157, 130, 206, 250, 124, 193, 231,
-        26, 77, 147, 33, 218, 103, 174, 2, 6, 143, 29, 1, 175, 29, 29, 124, 133, 17, 32, 124, 4,
-        148, 131, 74, 156, 58, 185, 152, 11, 51, 226, 55, 115, 244, 139, 198, 207, 133,
-    ];
-
-    let verified_header1 = match tree.verify_header(block1, Duration::new(0, 0)).unwrap() {
-        HeaderVerifySuccess::Verified {
-            verified_header, ..
-        } => verified_header,
-        _ => panic!(),
-    };
-
-    tree.insert_verified_header(verified_header1, ());
-
-    let verified_header2 = match tree.verify_header(block2, Duration::new(0, 0)).unwrap() {
-        HeaderVerifySuccess::Verified {
-            verified_header, ..
-        } => verified_header,
-        _ => panic!(),
-    };
-
-    tree.insert_verified_header(verified_header2, ());
-}
-
-#[test]
-fn kusama_blocks_0_to_2() {
-    let mut tree = NonFinalizedTree::new(Config {
-        chain_information: chain_information::ChainInformation {
-            finalized_block_header: Box::new(header::Header {
-                parent_hash: [
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                ],
-                number: 0,
-                state_root: [
-                    176, 0, 98, 3, 195, 166, 230, 189, 44, 106, 23, 177, 212, 174, 140, 164, 154,
-                    49, 218, 15, 69, 121, 218, 149, 11, 18, 119, 116, 180, 74, 239, 107,
-                ],
-                extrinsics_root: [
-                    3, 23, 10, 46, 117, 151, 183, 183, 227, 216, 76, 5, 57, 29, 19, 154, 98, 177,
-                    87, 231, 135, 134, 216, 192, 130, 242, 157, 207, 76, 17, 19, 20,
-                ],
-                digest: header::Digest::from(header::DigestRef::empty()),
-            }),
+            finalized_block_header: Box::new(header::decode(&finalized, 4).unwrap().into()),
             consensus: chain_information::ChainInformationConsensus::Babe {
                 slots_per_epoch: NonZero::<u64>::new(600).unwrap(),
-                finalized_block_epoch_information: None,
-                finalized_next_epoch_transition: Box::new(
-                    chain_information::BabeEpochInformation {
-                        epoch_index: 0,
-                        start_slot_number: None,
-                        authorities: vec![
-                            header::BabeAuthority {
-                                public_key: [
-                                    202, 35, 147, 146, 150, 4, 115, 254, 27, 198, 95, 148, 238, 39,
-                                    216, 144, 164, 156, 27, 32, 12, 0, 111, 245, 220, 197, 37, 51,
-                                    14, 204, 22, 119,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    180, 111, 1, 135, 76, 231, 171, 187, 82, 32, 232, 253, 137,
-                                    190, 222, 10, 218, 209, 76, 115, 3, 157, 145, 226, 142, 136,
-                                    24, 35, 67, 62, 114, 63,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    214, 132, 217, 23, 109, 110, 182, 152, 135, 84, 12, 154, 137,
-                                    250, 96, 151, 173, 234, 130, 252, 75, 15, 242, 109, 16, 98,
-                                    180, 136, 243, 82, 225, 121,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    104, 25, 90, 113, 189, 222, 73, 17, 122, 97, 100, 36, 189, 198,
-                                    10, 23, 51, 233, 106, 203, 29, 165, 174, 171, 93, 38, 140, 242,
-                                    165, 114, 233, 65,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    26, 5, 117, 239, 74, 226, 75, 223, 211, 31, 76, 181, 189, 97,
-                                    35, 154, 230, 124, 18, 212, 230, 74, 229, 26, 199, 86, 4, 74,
-                                    166, 173, 130, 0,
-                                ],
-                                weight: 1,
-                            },
-                            header::BabeAuthority {
-                                public_key: [
-                                    24, 22, 143, 42, 173, 0, 129, 162, 87, 40, 150, 30, 224, 6, 39,
-                                    207, 227, 94, 57, 131, 60, 128, 80, 22, 99, 43, 247, 193, 77,
-                                    165, 128, 9,
-                                ],
-                                weight: 1,
-                            },
-                        ],
-                        randomness: [
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0,
-                        ],
-                        c: (1, 4),
-                        allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryPlainSlots,
-                    },
-                ),
+                finalized_block_epoch_information: Some(Box::new(chain_information::BabeEpochInformation {
+                    epoch_index: 895,
+                    start_slot_number: Some(298928016),
+                    authorities: vec![
+                        header::BabeAuthority { public_key: hex32("22a5e0172444e42a1ea3e29830c83a6e0a84a33263cfe2a7008871b001a8e74b"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("507fc640a1bb08b2e118846de14705579dfe58672cf38f21db5752926acd9417"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("ac680114b0cf7808f05deeddebd067ed520eb71f9dccca4d3290a91760950e74"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("620f7e55a0af1d74edfd807d77e2f125ed28a1fcd865699da5897e6cf7d8e93a"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("4e4977fb1f2802b5c49b59b0154ac8f5f888bb72d91a21b0b84cb896a900ff54"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("0c5c662c5202d3791ea8d5a19f8121d2422790dbe46420eb83d6f12d90fb6f67"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("c015d853b41e00914525c852fc89bad17ed90a8df1a6be9bd7e945967e59de6e"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("8c54eb78ec5f530317c3f74ec43e3c0d14460755377b147be26f6e25ace5f03d"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("2c6fd021135a0de764bd7a26bad6b5a329c00d3195182f2f29e1694b4e46ab39"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("6896d03c0d08da73257a98332f418dbd84dedb10515a6cb20608b065953b833f"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("3a35ad97f29553dbf45438c7aabb1c6703cda4edfe31a6d8e97d75e77c7e6258"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("1e307845454d1930a44728d3a4b0c3a8a796ca7864f02337506d95bbba23a64d"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("26f1a959083449c89877ab91a027133806ea41a7363dccd66b751c4f31b3ab1a"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("f2e648c3df9281cbe3514b6a4c244a4d3d10bcf6dcd9aa8446149d8fe5cf821a"), weight: 1 },
+                    ],
+                    randomness: hex32("2487c75473402731f365fed142d6845cc91cedc16103b1399aec4a9ab108e142"),
+                    c: (1, 4),
+                    allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryVrfSlots,
+                })),
+                finalized_next_epoch_transition: Box::new(chain_information::BabeEpochInformation {
+                    epoch_index: 896,
+                    start_slot_number: Some(298928616),
+                    authorities: vec![
+                        header::BabeAuthority { public_key: hex32("22a5e0172444e42a1ea3e29830c83a6e0a84a33263cfe2a7008871b001a8e74b"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("507fc640a1bb08b2e118846de14705579dfe58672cf38f21db5752926acd9417"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("ac680114b0cf7808f05deeddebd067ed520eb71f9dccca4d3290a91760950e74"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("620f7e55a0af1d74edfd807d77e2f125ed28a1fcd865699da5897e6cf7d8e93a"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("4e4977fb1f2802b5c49b59b0154ac8f5f888bb72d91a21b0b84cb896a900ff54"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("0c5c662c5202d3791ea8d5a19f8121d2422790dbe46420eb83d6f12d90fb6f67"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("c015d853b41e00914525c852fc89bad17ed90a8df1a6be9bd7e945967e59de6e"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("8c54eb78ec5f530317c3f74ec43e3c0d14460755377b147be26f6e25ace5f03d"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("2c6fd021135a0de764bd7a26bad6b5a329c00d3195182f2f29e1694b4e46ab39"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("6896d03c0d08da73257a98332f418dbd84dedb10515a6cb20608b065953b833f"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("3a35ad97f29553dbf45438c7aabb1c6703cda4edfe31a6d8e97d75e77c7e6258"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("1e307845454d1930a44728d3a4b0c3a8a796ca7864f02337506d95bbba23a64d"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("26f1a959083449c89877ab91a027133806ea41a7363dccd66b751c4f31b3ab1a"), weight: 1 },
+                        header::BabeAuthority { public_key: hex32("f2e648c3df9281cbe3514b6a4c244a4d3d10bcf6dcd9aa8446149d8fe5cf821a"), weight: 1 },
+                    ],
+                    randomness: hex32("9ad2e5ff3269a667c32ec2c38f45c103db72d13d73bf7af581c5f4a91c374e43"),
+                    c: (1, 4),
+                    allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryVrfSlots,
+                }),
             },
             finality: chain_information::ChainInformationFinality::Grandpa {
-                after_finalized_block_authorities_set_id: 0,
+                after_finalized_block_authorities_set_id: 4,
                 finalized_triggered_authorities: vec![
-                    header::GrandpaAuthority {
-                        public_key: [
-                            49, 110, 204, 43, 155, 120, 0, 132, 237, 16, 186, 123, 64, 22, 150,
-                            175, 210, 16, 101, 97, 184, 25, 44, 61, 130, 24, 17, 237, 220, 133,
-                            190, 18,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            65, 31, 193, 165, 200, 138, 178, 187, 127, 99, 178, 59, 21, 195, 153,
-                            131, 207, 56, 243, 172, 45, 253, 156, 81, 104, 213, 215, 235, 186, 216,
-                            53, 68,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            213, 72, 196, 144, 255, 110, 114, 142, 208, 147, 167, 64, 103, 17, 215,
-                            107, 44, 125, 4, 199, 114, 119, 251, 136, 177, 195, 199, 137, 250, 100,
-                            23, 55,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            185, 140, 147, 11, 155, 74, 120, 44, 163, 146, 88, 13, 2, 237, 17, 133,
-                            250, 50, 20, 190, 158, 118, 105, 255, 125, 192, 150, 209, 125, 40, 107,
-                            210,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            92, 227, 13, 140, 0, 125, 10, 67, 140, 146, 195, 122, 102, 11, 119, 9,
-                            253, 31, 243, 187, 167, 156, 108, 72, 50, 234, 65, 7, 210, 102, 224, 1,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
-                    header::GrandpaAuthority {
-                        public_key: [
-                            244, 84, 117, 193, 93, 68, 115, 23, 183, 222, 56, 151, 38, 86, 210, 7,
-                            227, 98, 247, 250, 68, 41, 214, 101, 206, 16, 169, 218, 42, 206, 37,
-                            76,
-                        ],
-                        weight: NonZero::<u64>::new(1).unwrap(),
-                    },
+                    header::GrandpaAuthority { public_key: hex32("140ec6acc3d2ccfe8017c2b87a0dfe634c6de1104574059e3ba05cdbb6190f08"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("e78c542579cfcb4bf781268a57c7ae19abe426ed075f298f1ead033e901da882"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("47d1e266d0f8411dc03808acbaf330499c03a288f0dd80d0b7a558e1ee7b6e8f"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("1cee1e8b20ef554efaa29ac5a2c2418503df3a4449a769f3649a2add036bd38f"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("2600c4b144906b2dc3ba8aefca015a8532e5589b11b164439fb0b4fb004383aa"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("0d3be87d022659068339f82bb458976f83b7c75287b842a2dc179d556b34fbff"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("3e6aae6e3c55c25f0b6765818b513ccceac769d371a4bb401240282d251151e7"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("37cd7e2689782aa1d5f52ed24bd9c4bcf8f811effbefac2039a027a51f33a595"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("b34d50cbb391e36f5820fe8d4c572b8c20e3b7ce82dfbdac08ac800b90554d43"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("0e96449f0667776ca4507b30fef3e4168f20da1acb0dd57e71ecca74d7e7ace5"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("c57688bc9175f1ea6e2cf7dd8a3593ca6b2764b1b78165c8e8c6b791f66b48a7"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("fb6f3bc5a49916d1917500d3ff1882c525f2d20d32f16d5429ec1595e05db182"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("7d4567a4100b9fd2db6d741a60aef2693f6ca1c875a588036ab2b7cd3d449b63"), weight: NonZero::<u64>::new(1).unwrap() },
+                    header::GrandpaAuthority { public_key: hex32("87f3c60d6f12aeee640840f82b9deb899d287dffc605a9a115d46dc84f4739b4"), weight: NonZero::<u64>::new(1).unwrap() },
                 ],
                 finalized_scheduled_change: None,
             },
@@ -383,44 +115,6 @@ fn kusama_blocks_0_to_2() {
         block_number_bytes: 4,
         allow_unknown_consensus_engines: false,
     });
-
-    let block1 = vec![
-        176, 168, 212, 147, 40, 92, 45, 247, 50, 144, 223, 183, 230, 31, 135, 15, 23, 180, 24, 1,
-        25, 122, 20, 156, 169, 54, 84, 73, 158, 163, 218, 254, 4, 250, 187, 12, 110, 146, 210, 158,
-        139, 178, 22, 127, 60, 111, 176, 221, 235, 149, 106, 66, 120, 163, 207, 133, 54, 97, 175,
-        116, 160, 118, 252, 156, 183, 163, 95, 183, 247, 97, 111, 92, 151, 157, 72, 34, 43, 61, 47,
-        167, 203, 35, 49, 239, 115, 149, 71, 38, 113, 77, 145, 202, 148, 92, 195, 79, 216, 12, 6,
-        66, 65, 66, 69, 52, 2, 1, 0, 0, 0, 239, 85, 165, 15, 0, 0, 0, 0, 4, 66, 65, 66, 69, 73, 4,
-        1, 24, 202, 35, 147, 146, 150, 4, 115, 254, 27, 198, 95, 148, 238, 39, 216, 144, 164, 156,
-        27, 32, 12, 0, 111, 245, 220, 197, 37, 51, 14, 204, 22, 119, 1, 0, 0, 0, 0, 0, 0, 0, 180,
-        111, 1, 135, 76, 231, 171, 187, 82, 32, 232, 253, 137, 190, 222, 10, 218, 209, 76, 115, 3,
-        157, 145, 226, 142, 136, 24, 35, 67, 62, 114, 63, 1, 0, 0, 0, 0, 0, 0, 0, 214, 132, 217,
-        23, 109, 110, 182, 152, 135, 84, 12, 154, 137, 250, 96, 151, 173, 234, 130, 252, 75, 15,
-        242, 109, 16, 98, 180, 136, 243, 82, 225, 121, 1, 0, 0, 0, 0, 0, 0, 0, 104, 25, 90, 113,
-        189, 222, 73, 17, 122, 97, 100, 36, 189, 198, 10, 23, 51, 233, 106, 203, 29, 165, 174, 171,
-        93, 38, 140, 242, 165, 114, 233, 65, 1, 0, 0, 0, 0, 0, 0, 0, 26, 5, 117, 239, 74, 226, 75,
-        223, 211, 31, 76, 181, 189, 97, 35, 154, 230, 124, 18, 212, 230, 74, 229, 26, 199, 86, 4,
-        74, 166, 173, 130, 0, 1, 0, 0, 0, 0, 0, 0, 0, 24, 22, 143, 42, 173, 0, 129, 162, 87, 40,
-        150, 30, 224, 6, 39, 207, 227, 94, 57, 131, 60, 128, 80, 22, 99, 43, 247, 193, 77, 165,
-        128, 9, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 66, 65, 66, 69, 1, 1, 70, 37, 40, 72, 131, 229, 100,
-        188, 30, 64, 99, 245, 234, 43, 73, 132, 108, 221, 218, 163, 118, 29, 4, 245, 67, 182, 152,
-        193, 195, 238, 147, 92, 64, 210, 91, 134, 146, 71, 195, 108, 107, 138, 140, 187, 215, 187,
-        39, 104, 245, 96, 171, 124, 39, 109, 243, 198, 45, 243, 87, 167, 227, 177, 236, 141,
-    ];
-
-    let block2 = vec![
-        205, 155, 142, 47, 194, 245, 124, 69, 112, 168, 99, 25, 176, 5, 131, 32, 128, 224, 196,
-        120, 171, 65, 174, 93, 68, 226, 55, 5, 135, 47, 90, 211, 8, 255, 150, 206, 251, 45, 135,
-        125, 246, 130, 224, 54, 106, 95, 245, 49, 208, 120, 103, 209, 119, 57, 200, 93, 225, 26,
-        88, 0, 194, 10, 128, 229, 204, 79, 133, 232, 31, 56, 113, 82, 250, 111, 61, 32, 44, 149,
-        220, 57, 97, 234, 129, 229, 66, 134, 140, 116, 118, 106, 66, 255, 166, 203, 49, 13, 95, 8,
-        6, 66, 65, 66, 69, 52, 2, 3, 0, 0, 0, 242, 85, 165, 15, 0, 0, 0, 0, 5, 66, 65, 66, 69, 1,
-        1, 30, 94, 174, 6, 178, 65, 184, 201, 171, 92, 53, 248, 22, 33, 130, 13, 174, 76, 172, 14,
-        50, 0, 42, 120, 77, 188, 35, 60, 193, 16, 250, 123, 117, 227, 254, 70, 249, 151, 51, 51,
-        131, 155, 40, 151, 214, 202, 179, 155, 107, 97, 230, 47, 86, 51, 175, 4, 94, 167, 224, 20,
-        123, 155, 99, 130,
-    ];
 
     let verified_header1 = match tree.verify_header(block1, Duration::new(0, 0)).unwrap() {
         HeaderVerifySuccess::Verified {
