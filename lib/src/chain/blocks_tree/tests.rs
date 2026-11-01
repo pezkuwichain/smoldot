@@ -113,7 +113,8 @@ fn zagros_two_blocks_after_finalized() {
         .unwrap(),
         blocks_capacity: 8,
         block_number_bytes: 4,
-        allow_unknown_consensus_engines: false,
+        // Zagros headers carry BEEFY (`BEEF`) consensus logs, which smoldot does not verify.
+        allow_unknown_consensus_engines: true,
     });
 
     let verified_header1 = match tree.verify_header(block1, Duration::new(0, 0)).unwrap() {
