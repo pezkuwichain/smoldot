@@ -3137,7 +3137,7 @@ impl SignatureVerification {
             SignatureVerificationAlgorithm::Sr25519V1 => {
                 schnorrkel::PublicKey::from_bytes(self.public_key().as_ref()).map_or(false, |pk| {
                     pk.verify_simple_preaudit_deprecated(
-                        b"substrate",
+                        crate::SR25519_SIGNING_CONTEXT,
                         self.message().as_ref(),
                         self.signature().as_ref(),
                     )
@@ -3150,8 +3150,12 @@ impl SignatureVerification {
                     return false;
                 };
                 schnorrkel::PublicKey::from_bytes(self.public_key().as_ref()).map_or(false, |pk| {
-                    pk.verify_simple(b"substrate", self.message().as_ref(), &signature)
-                        .is_ok()
+                    pk.verify_simple(
+                        crate::SR25519_SIGNING_CONTEXT,
+                        self.message().as_ref(),
+                        &signature,
+                    )
+                    .is_ok()
                 })
             }
             SignatureVerificationAlgorithm::Ecdsa => {

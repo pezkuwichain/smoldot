@@ -196,6 +196,11 @@ extern crate alloc;
 #[cfg(test)]
 use criterion as _;
 
+/// Context under which PezkuwiChain signs and verifies every sr25519 signature: block seals,
+/// extrinsics, messages. Upstream Substrate uses `b"substrate"`; a signature made under one
+/// context does not verify under the other.
+pub const SR25519_SIGNING_CONTEXT: &[u8] = b"bizinikiwi";
+
 pub mod author;
 pub mod chain;
 pub mod chain_spec;
@@ -214,3 +219,27 @@ pub mod trie;
 pub mod verify;
 
 mod util;
+
+#[cfg(test)]
+mod tests {
+    /// A signature made by the Pezkuwi wallet's signer (`@pezkuwi/wasm-crypto`, sr25519,
+    /// seed `[0; 32]`, message `b"BIZINIKIWI"`), the same vector PezkuwiChain's own
+    /// `sp_core::sr25519` tests pin. It verifies only under [`super::SR25519_SIGNING_CONTEXT`].
+    #[test]
+    fn wallet_signature_verifies_under_the_chain_context() {
+        let public = schnorrkel::MiniSecretKey::from_bytes(&[0; 32])
+            .unwrap()
+            .expand_to_keypair(schnorrkel::ExpandMode::Ed25519)
+            .public;
+        let signature = schnorrkel::Signature::from_bytes(&hex::decode(
+            "80b03ed44f921841e61da3509cb093bf7ffc65bf4650a1c57d2115dcf317085694d0da297858bea6d1aa1e929261a1cc32ab878333473a0e62dc1ec848add481",
+        ).unwrap())
+        .unwrap();
+
+        assert!(
+            public
+                .verify_simple(super::SR25519_SIGNING_CONTEXT, b"BIZINIKIWI", &signature)
+                .is_ok()
+        );
+    }
+}
