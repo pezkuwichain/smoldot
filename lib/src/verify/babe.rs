@@ -133,6 +133,10 @@ use crate::{chain::chain_information, header};
 
 use core::{num::NonZero, time::Duration};
 
+/// Context the primary-slot score is derived under from a block's VRF output. PezkuwiChain uses
+/// `b"bizinikiwi-babe-vrf"` where upstream Substrate uses `b"substrate-babe-vrf"`.
+const AUTHORING_SCORE_VRF_CONTEXT: &[u8] = b"bizinikiwi-babe-vrf";
+
 /// Configuration for [`verify_header`].
 pub struct VerifyConfig<'a> {
     /// Header of the block to verify.
@@ -458,7 +462,11 @@ pub fn verify_header(config: VerifyConfig) -> Result<VerifySuccess, VerifyError>
     let signing_public_key = schnorrkel::PublicKey::from_bytes(signing_authority.public_key)
         .map_err(|_| VerifyError::BadPublicKey)?;
     signing_public_key
-        .verify_simple(b"substrate", &pre_seal_hash, &seal_signature)
+        .verify_simple(
+            crate::SR25519_SIGNING_CONTEXT,
+            &pre_seal_hash,
+            &seal_signature,
+        )
         .map_err(|_| VerifyError::BadSignature)?;
 
     // Now verify the VRF output and proof, if any.
@@ -492,7 +500,7 @@ pub fn verify_header(config: VerifyConfig) -> Result<VerifySuccess, VerifyError>
                 block_epoch_info.authorities.clone().map(|a| a.weight),
                 signing_authority.weight,
             );
-            if u128::from_le_bytes(vrf_in_out.make_bytes::<[u8; 16]>(b"substrate-babe-vrf"))
+            if u128::from_le_bytes(vrf_in_out.make_bytes::<[u8; 16]>(AUTHORING_SCORE_VRF_CONTEXT))
                 >= threshold
             {
                 return Err(VerifyError::OverPrimaryClaimThreshold);
@@ -642,5 +650,227 @@ mod tests {
             ),
             72686664904329579129208832u128
         );
+    }
+
+    /// A real primary-slot block of the Zagros relay chain, #526157
+    /// (0xcb33ab7e30f50b8146dbca4709b828b9d96735427000fa4bb77abd09b52077ea), verified with the
+    /// epoch the chain itself reports (`BabeApi_current_epoch` / `BabeApi_next_epoch` at the
+    /// parent). It only verifies under PezkuwiChain's sr25519 signing context and BABE VRF
+    /// context: with upstream Substrate's the seal fails (`BadSignature`) or the primary claim
+    /// fails (`OverPrimaryClaimThreshold`).
+    #[test]
+    fn zagros_primary_block_verifies() {
+        use super::{Duration, NonZero, VerifyConfig, verify_header};
+        use crate::{chain::chain_information::BabeEpochInformationRef, header};
+
+        fn hex32(s: &str) -> [u8; 32] {
+            <[u8; 32]>::try_from(hex::decode(s).unwrap()).unwrap()
+        }
+
+        let block = hex::decode("c29220977dd13ee8c63d18506cb336ff7488bb559cae0b0cf61ab4e05336a858361d20009db218604cc0b1d35ca4cfcb0e4ce9c4925083d714c5e8f2181609347ad7fbabba8c168eac2767a7fb77d66af32bc921a8e56886b9991ff1f2a3cc76f33e261f0c0642414245b50101050000006448d11100000000fe2520dbcb8656c94463f90e56a5d4a741260f1bd516f6894be569421219fd18b41bdee082e89700b869186b32260f0c97f00e69511f2ad29712c275d59dbe0a68bf65ae7576d2d07311689f086b41ad82b8c6e917393bc663f753a4f4d0bc0504424545468403643c93a4352a23b0825c0500e571ebb31ed457f1643135ad539231c30f6f5b2205424142450101baf644c302dc328e90a2f53aec282acd69779b5b8868efb6fba3e32a1e12a02962acf66f4b2330894cd9c41b58859abf78b6ac63228ab4739fdba43202690481").unwrap();
+        let parent = hex::decode("096ce0231c7ce8c291a671bb9e8fd30f27efaf0229e9bc1b60b1e7c2d86cbc7f321d2000b461527b87e82b6288b725dfb820297339e4a54d6bb0f811470e0c59310b75968e4a34c603d01dd32edd49335a61b65cdd1e35a734fe7507159ad9cc53cbf3fa0c0642414245b50101090000006348d11100000000cc17c053109e45242eb8ccc9db02511b79f9595264e5758c382969b15cd60b4ff8a27be7d92e4ba930751a060b32e1fa4f348d4635f0fd0866fc081d047c5904aadbdd563e2184558317e61014ad2cfacf2616040fcbca9b016d81692dfcd30c044245454684031b02f94bd39b7cec90c9d67a3c9bc888c4b24d5d649fcf0631168b055017a252054241424501010ad7b4ebfdb7d8fc76d8d52cb491bb4f81674835468d968bd0047486cd3c4118ef16aa626391d0db2d501e99a56b9b5fc14d77caf6cb1c2655df0670c6170686").unwrap();
+        let current_authorities = [
+            header::BabeAuthority {
+                public_key: hex32(
+                    "22a5e0172444e42a1ea3e29830c83a6e0a84a33263cfe2a7008871b001a8e74b",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "507fc640a1bb08b2e118846de14705579dfe58672cf38f21db5752926acd9417",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "ac680114b0cf7808f05deeddebd067ed520eb71f9dccca4d3290a91760950e74",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "620f7e55a0af1d74edfd807d77e2f125ed28a1fcd865699da5897e6cf7d8e93a",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "4e4977fb1f2802b5c49b59b0154ac8f5f888bb72d91a21b0b84cb896a900ff54",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "0c5c662c5202d3791ea8d5a19f8121d2422790dbe46420eb83d6f12d90fb6f67",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "c015d853b41e00914525c852fc89bad17ed90a8df1a6be9bd7e945967e59de6e",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "8c54eb78ec5f530317c3f74ec43e3c0d14460755377b147be26f6e25ace5f03d",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "2c6fd021135a0de764bd7a26bad6b5a329c00d3195182f2f29e1694b4e46ab39",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "6896d03c0d08da73257a98332f418dbd84dedb10515a6cb20608b065953b833f",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "3a35ad97f29553dbf45438c7aabb1c6703cda4edfe31a6d8e97d75e77c7e6258",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "1e307845454d1930a44728d3a4b0c3a8a796ca7864f02337506d95bbba23a64d",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "26f1a959083449c89877ab91a027133806ea41a7363dccd66b751c4f31b3ab1a",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "f2e648c3df9281cbe3514b6a4c244a4d3d10bcf6dcd9aa8446149d8fe5cf821a",
+                ),
+                weight: 1,
+            },
+        ];
+        let current_randomness =
+            hex32("2487c75473402731f365fed142d6845cc91cedc16103b1399aec4a9ab108e142");
+        let next_authorities = [
+            header::BabeAuthority {
+                public_key: hex32(
+                    "22a5e0172444e42a1ea3e29830c83a6e0a84a33263cfe2a7008871b001a8e74b",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "507fc640a1bb08b2e118846de14705579dfe58672cf38f21db5752926acd9417",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "ac680114b0cf7808f05deeddebd067ed520eb71f9dccca4d3290a91760950e74",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "620f7e55a0af1d74edfd807d77e2f125ed28a1fcd865699da5897e6cf7d8e93a",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "4e4977fb1f2802b5c49b59b0154ac8f5f888bb72d91a21b0b84cb896a900ff54",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "0c5c662c5202d3791ea8d5a19f8121d2422790dbe46420eb83d6f12d90fb6f67",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "c015d853b41e00914525c852fc89bad17ed90a8df1a6be9bd7e945967e59de6e",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "8c54eb78ec5f530317c3f74ec43e3c0d14460755377b147be26f6e25ace5f03d",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "2c6fd021135a0de764bd7a26bad6b5a329c00d3195182f2f29e1694b4e46ab39",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "6896d03c0d08da73257a98332f418dbd84dedb10515a6cb20608b065953b833f",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "3a35ad97f29553dbf45438c7aabb1c6703cda4edfe31a6d8e97d75e77c7e6258",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "1e307845454d1930a44728d3a4b0c3a8a796ca7864f02337506d95bbba23a64d",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "26f1a959083449c89877ab91a027133806ea41a7363dccd66b751c4f31b3ab1a",
+                ),
+                weight: 1,
+            },
+            header::BabeAuthority {
+                public_key: hex32(
+                    "f2e648c3df9281cbe3514b6a4c244a4d3d10bcf6dcd9aa8446149d8fe5cf821a",
+                ),
+                weight: 1,
+            },
+        ];
+        let next_randomness =
+            hex32("9ad2e5ff3269a667c32ec2c38f45c103db72d13d73bf7af581c5f4a91c374e43");
+
+        let header = header::decode(&block, 4).unwrap();
+        let success = verify_header(VerifyConfig {
+            header: header.clone(),
+            block_number_bytes: 4,
+            parent_block_header: header::decode(&parent, 4).unwrap(),
+            now_from_unix_epoch: Duration::from_secs(u64::MAX / 2),
+            slots_per_epoch: NonZero::<u64>::new(600).unwrap(),
+            parent_block_epoch: Some(BabeEpochInformationRef {
+                epoch_index: 895,
+                start_slot_number: Some(298928016),
+                authorities: header::BabeAuthoritiesIter::from_slice(&current_authorities),
+                randomness: &current_randomness,
+                c: (1, 4),
+                allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryVrfSlots,
+            }),
+            parent_block_next_epoch: BabeEpochInformationRef {
+                epoch_index: 896,
+                start_slot_number: Some(298928616),
+                authorities: header::BabeAuthoritiesIter::from_slice(&next_authorities),
+                randomness: &next_randomness,
+                c: (1, 4),
+                allowed_slots: header::BabeAllowedSlots::PrimaryAndSecondaryVrfSlots,
+            },
+        })
+        .unwrap();
+        assert!(success.is_primary_slot);
     }
 }

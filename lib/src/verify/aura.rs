@@ -213,7 +213,11 @@ pub fn verify_header<'a>(
 
     // Now verifying the signature in the seal.
     authority_public_key
-        .verify_simple(b"substrate", &pre_seal_hash, &seal_signature)
+        .verify_simple(
+            crate::SR25519_SIGNING_CONTEXT,
+            &pre_seal_hash,
+            &seal_signature,
+        )
         .map_err(|_| VerifyError::BadSignature)?;
 
     // Success! 🚀

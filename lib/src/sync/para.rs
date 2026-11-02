@@ -22,7 +22,7 @@
 //!
 //! In order to obtain the current best block of a parachain, you must obtain the parachains
 //! persisted validation data from the relay chain. This is done by calling the
-//! `ParachainHost_persisted_validation_data` runtime function. The runtime function returns
+//! `TeyrchainHost_persisted_validation_data` runtime function. The runtime function returns
 //! an opaque set of bytes called the "head data" whose meaning depends on the parachain. Most of
 //! the time, it is a block hash.
 //!
@@ -33,7 +33,7 @@
 //! function. The first parameter is a `para_id` found in the chain specification of the
 //! parachain of parathread.
 
-/// Produces the input to pass to the `ParachainHost_persisted_validation_data` runtime call.
+/// Produces the input to pass to the `TeyrchainHost_persisted_validation_data` runtime call.
 pub fn persisted_validation_data_parameters(
     para_id: u32,
     assumption: OccupiedCoreAssumption,
@@ -46,7 +46,7 @@ pub fn persisted_validation_data_parameters(
 }
 
 /// Name of the runtime function to call in order to obtain the parachain heads.
-pub const PERSISTED_VALIDATION_FUNCTION_NAME: &str = "ParachainHost_persisted_validation_data";
+pub const PERSISTED_VALIDATION_FUNCTION_NAME: &str = "TeyrchainHost_persisted_validation_data";
 
 /// An assumption being made about the state of an occupied core.
 // TODO: what does that mean?
@@ -71,7 +71,7 @@ impl OccupiedCoreAssumption {
     }
 }
 
-/// Attempt to decode the return value of the `ParachainHost_persisted_validation_data` runtime
+/// Attempt to decode the return value of the `TeyrchainHost_persisted_validation_data` runtime
 /// call.
 pub fn decode_persisted_validation_data_return_value(
     scale_encoded: &'_ [u8],
@@ -137,6 +137,17 @@ fn persisted_validation_data<'a, E: nom::error::ParseError<&'a [u8]>>(
 
 #[cfg(test)]
 mod tests {
+    /// PezkuwiChain's relay runtime names the API `TeyrchainHost`; a relay node asked for the
+    /// upstream `ParachainHost_persisted_validation_data` cannot answer, and no parachain head
+    /// is ever obtained.
+    #[test]
+    fn persisted_validation_data_is_called_on_teyrchain_host() {
+        assert_eq!(
+            super::PERSISTED_VALIDATION_FUNCTION_NAME,
+            "TeyrchainHost_persisted_validation_data"
+        );
+    }
+
     #[test]
     fn basic_decode() {
         let encoded = [

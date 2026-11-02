@@ -220,7 +220,7 @@ impl Keystore {
         Ok(Keystore {
             keys_directory,
             guarded: Mutex::new(Guarded { gen_rng, keys }),
-            sr25519_signing_context: schnorrkel::signing_context(b"substrate"),
+            sr25519_signing_context: schnorrkel::signing_context(crate::SR25519_SIGNING_CONTEXT),
         })
     }
 
@@ -731,7 +731,7 @@ mod tests {
                 schnorrkel::PublicKey::from_bytes(&public_key)
                     .unwrap()
                     .verify_simple(
-                        b"substrate",
+                        crate::SR25519_SIGNING_CONTEXT,
                         b"hello world",
                         &schnorrkel::Signature::from_bytes(&signature).unwrap()
                     )
