@@ -79,5 +79,9 @@
     "@types/ws": "^8.5.3",
     "ava": "^6.0.0",
     "typescript": "^5.3.2"
+  },
+  "overrides": {
+    "glob": "^14.0.3",
+    "minimatch": "^11.0.3"
   }
 }
