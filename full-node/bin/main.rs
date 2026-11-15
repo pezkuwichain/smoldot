@@ -388,7 +388,6 @@ async fn run(cli_options: cli::CliOptionsRun) {
             Arc::new(move |task| executor.spawn(task).detach())
         },
         log_callback: log_callback.clone(),
-        jaeger_agent: cli_options.jaeger,
     })
     .await;
 

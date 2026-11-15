@@ -36,7 +36,6 @@ fn send_request_errs_if_malformed() {
             listen_addresses: Vec::new(),
             tasks_executor: Arc::new(|task| smol::spawn(task).detach()),
             log_callback: Arc::new(move |_, _| {}),
-            jaeger_agent: None,
         })
         .await
         .unwrap();
@@ -68,7 +67,6 @@ fn send_request_works_if_unknown_request() {
             listen_addresses: Vec::new(),
             tasks_executor: Arc::new(|task| smol::spawn(task).detach()),
             log_callback: Arc::new(move |_, _| {}),
-            jaeger_agent: None,
         })
         .await
         .unwrap();

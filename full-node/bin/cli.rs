@@ -95,9 +95,6 @@ pub struct CliOptionsRun {
     #[arg(long, value_parser = decode_sr25519_private_key)]
     // TODO: also automatically add the same keys through ed25519?
     pub keystore_memory: Vec<Box<[u8; 64]>>,
-    /// Address of a Jaeger agent to send traces to (hint: port is typically 6831).
-    #[arg(long)]
-    pub jaeger: Option<SocketAddr>,
     /// Do not load or store anything on disk.
     #[arg(long)]
     pub tmp: bool,

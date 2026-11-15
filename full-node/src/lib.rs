@@ -37,7 +37,6 @@ use std::{array, borrow::Cow, io, iter, mem, net::SocketAddr, path::PathBuf, syn
 
 mod consensus_service;
 mod database_thread;
-mod jaeger_service;
 mod json_rpc_service;
 mod network_service;
 mod util;
@@ -58,8 +57,6 @@ pub struct Config<'a> {
     pub tasks_executor: Arc<dyn Fn(future::BoxFuture<'static, ()>) + Send + Sync>,
     /// Function called whenever a part of the node wants to notify of something.
     pub log_callback: Arc<dyn LogCallback + Send + Sync>,
-    /// Address of a Jaeger agent to send traces to. If `None`, do not send Jaeger traces.
-    pub jaeger_agent: Option<SocketAddr>,
 }
 
 /// See [`ChainConfig::json_rpc_listen`].
@@ -250,8 +247,6 @@ pub enum StartError {
     KeystoreInit(io::Error),
     /// Error initializing the keystore of the relay chain.
     RelayChainKeystoreInit(io::Error),
-    /// Error initializing the Jaeger service.
-    JaegerInit(io::Error),
 }
 
 /// Error potentially returned by [`Client::relay_chain_send_json_rpc_request`].
@@ -399,14 +394,6 @@ pub async fn start(mut config: Config<'_>) -> Result<Client, StartError> {
         .as_ref()
         .finalized_block_header
         .hash(chain_spec.block_number_bytes().into());
-
-    let jaeger_service = jaeger_service::JaegerService::new(jaeger_service::Config {
-        tasks_executor: &mut |task| (config.tasks_executor)(task),
-        service_name: local_peer_id.to_string(),
-        jaeger_agent: config.jaeger_agent,
-    })
-    .await
-    .map_err(StartError::JaegerInit)?;
 
     let (network_service, network_service_chain_ids, network_events_receivers) =
         network_service::NetworkService::new(network_service::Config {
@@ -571,7 +558,6 @@ pub async fn start(mut config: Config<'_>) -> Result<Client, StartError> {
                 Box::new(move |task| executor(task))
             },
             log_callback: config.log_callback.clone(),
-            jaeger_service: jaeger_service.clone(),
         })
         .await
         .map_err(StartError::NetworkInit)?;
@@ -601,7 +587,6 @@ pub async fn start(mut config: Config<'_>) -> Result<Client, StartError> {
         database: database.clone(),
         block_number_bytes: usize::from(chain_spec.block_number_bytes()),
         keystore,
-        jaeger_service: jaeger_service.clone(),
         slot_duration_author_ratio: 43691_u16,
     })
     .await
@@ -644,7 +629,6 @@ pub async fn start(mut config: Config<'_>) -> Result<Client, StartError> {
                     }
                     keystore
                 }),
-                jaeger_service, // TODO: consider passing a different jaeger service with a different service name
                 slot_duration_author_ratio: 43691_u16,
             })
             .await

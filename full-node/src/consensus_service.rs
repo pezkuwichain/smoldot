@@ -24,7 +24,7 @@
 // TODO: doc
 // TODO: re-review this once finished
 
-use crate::{LogCallback, LogLevel, database_thread, jaeger_service, network_service};
+use crate::{LogCallback, LogLevel, database_thread, network_service};
 
 use futures_channel::{mpsc, oneshot};
 use futures_lite::FutureExt as _;
@@ -91,9 +91,6 @@ pub struct Config {
     /// Receiver for events coming from the network, as returned by
     /// [`network_service::NetworkService::new`].
     pub network_events_receiver: stream::BoxStream<'static, network_service::Event>,
-
-    /// Service to use to report traces.
-    pub jaeger_service: Arc<jaeger_service::JaegerService>,
 
     /// A node has the authorization to author a block during a slot.
     ///
@@ -355,7 +352,6 @@ impl ConsensusService {
             peers_source_id_map: Default::default(),
             sub_tasks: FuturesUnordered::new(),
             log_callback: config.log_callback,
-            jaeger_service: config.jaeger_service,
         };
 
         (config.tasks_executor)(Box::pin(background_sync.run()));
@@ -680,9 +676,6 @@ struct SyncBackground {
     /// Whether an old block or storage item from an old block is currently being downloaded or
     /// must be downloaded.
     database_catch_up_download_block_verification: DatabaseCatchUpDownloadBlockVerification,
-
-    /// How to report events about blocks.
-    jaeger_service: Arc<jaeger_service::JaegerService>,
 }
 
 #[derive(Clone)]
@@ -1417,10 +1410,6 @@ impl SyncBackground {
                     scale_encoded_header,
                     is_best,
                 }) if chain_id == self.network_chain_id => {
-                    let _jaeger_span = self.jaeger_service.block_announce_process_span(
-                        &header::hash_from_scale_encoded_header(&scale_encoded_header),
-                    );
-
                     let id = *self.peers_source_id_map.get(&peer_id).unwrap();
                     // TODO: log the outcome
                     match self.sync.block_announce(id, scale_encoded_header, is_best) {
@@ -1463,8 +1452,6 @@ impl SyncBackground {
                     let (_, block_hash, scale_encoded_header, scale_encoded_extrinsics) =
                         self.authored_block.take().unwrap();
 
-                    let _jaeger_span = self.jaeger_service.block_import_queue_span(&block_hash);
-
                     // Create a request that is immediately answered right below.
                     let request_id = self.sync.add_request(source_id, request_info.into(), ());
                     // TODO: announce the block on the network, but only after it's been imported
@@ -1502,8 +1489,6 @@ impl SyncBackground {
                         debug_assert!(!info.is_disconnected);
                         info.peer_id
                     };
-
-                    // TODO: add jaeger span
 
                     let request = self.network_service.clone().blocks_request(
                         peer_id,
@@ -2192,10 +2177,6 @@ impl SyncBackground {
             ),
         );
 
-        // We would like to create a span for authoring the new block, but the trace id depends on
-        // the block hash, which is only known at the end.
-        let block_author_jaeger_start_time = mick_jaeger::StartTime::now();
-
         // Determine when the block should stop being authored.
         //
         // In order for the network to perform well, a block should be authored and propagated
@@ -2436,10 +2417,6 @@ impl SyncBackground {
                 new_block_body.len()
             ),
         );
-        let _jaeger_span = self
-            .jaeger_service
-            .block_authorship_span(&new_block_hash, block_author_jaeger_start_time);
-
         // Print a warning if generating the block has taken more time than expected.
         // This can happen because the node is completely overloaded, is running on a slow machine,
         // or if the runtime code being executed contains a very heavy operation.
@@ -2618,8 +2595,6 @@ impl SyncBackground {
                 // TODO: ban peer in case of verification failure
                 let when_verification_started = Instant::now();
                 let hash_to_verify = verify.hash();
-
-                let _jaeger_span = self.jaeger_service.block_verify_span(&hash_to_verify);
 
                 let (is_new_best, header_verification_success) =
                     match verify.verify_header(unix_time) {
