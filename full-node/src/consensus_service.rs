@@ -1449,7 +1449,7 @@ impl SyncBackground {
                         "queue-locally-authored-block-for-import".to_string(),
                     );
 
-                    let (_, block_hash, scale_encoded_header, scale_encoded_extrinsics) =
+                    let (_, _, scale_encoded_header, scale_encoded_extrinsics) =
                         self.authored_block.take().unwrap();
 
                     // Create a request that is immediately answered right below.
