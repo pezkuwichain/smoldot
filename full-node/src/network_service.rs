@@ -239,9 +239,6 @@ struct Inner {
     /// Identity of the local node.
     noise_key: service::NoiseKey,
 
-    /// Identity of the local node. Can be derived from [`Inner::noise_key`].
-    local_peer_id: PeerId,
-
     /// Data structure holding the entire state of the networking.
     network:
         service::ChainNetwork<Chain, channel::Sender<service::CoordinatorToConnection>, Instant>,
@@ -484,7 +481,6 @@ impl NetworkService {
 
         // Initialize the inner network service.
         run(Inner {
-            local_peer_id: local_peer_id.clone(),
             identify_agent_version: config.identify_agent_version,
             event_senders: either::Left(event_senders),
             event_pending_send: None,
