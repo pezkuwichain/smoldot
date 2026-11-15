@@ -27,7 +27,7 @@
 // TODO: doc
 // TODO: re-review this once finished
 
-use crate::{LogCallback, LogLevel, database_thread, jaeger_service};
+use crate::{LogCallback, LogLevel, database_thread};
 
 use core::{cmp, mem, pin::Pin, task::Poll, time::Duration};
 use futures_channel::oneshot;
@@ -87,9 +87,6 @@ pub struct Config {
     /// This is a Noise static key, according to the Noise specification.
     /// Signed using the actual libp2p key.
     pub noise_key: connection::NoiseKey,
-
-    /// Service to use to report traces.
-    pub jaeger_service: Arc<jaeger_service::JaegerService>,
 }
 
 /// Configuration for one chain.
@@ -159,10 +156,6 @@ pub enum Event {
 pub struct NetworkService {
     /// Identity of the local node.
     local_peer_id: PeerId,
-
-    /// Service to use to report traces.
-    // TODO: unused
-    _jaeger_service: Arc<jaeger_service::JaegerService>,
 
     /// Channel to send messages to the background task.
     to_background_tx: Mutex<channel::Sender<ToBackground>>,
@@ -245,12 +238,6 @@ struct Inner {
 
     /// Identity of the local node.
     noise_key: service::NoiseKey,
-
-    /// Identity of the local node. Can be derived from [`Inner::noise_key`].
-    local_peer_id: PeerId,
-
-    /// Service to use to report traces.
-    jaeger_service: Arc<jaeger_service::JaegerService>,
 
     /// Data structure holding the entire state of the networking.
     network:
@@ -494,7 +481,6 @@ impl NetworkService {
 
         // Initialize the inner network service.
         run(Inner {
-            local_peer_id: local_peer_id.clone(),
             identify_agent_version: config.identify_agent_version,
             event_senders: either::Left(event_senders),
             event_pending_send: None,
@@ -523,7 +509,6 @@ impl NetworkService {
                 5, // TODO: ?
                 Default::default(),
             ),
-            jaeger_service: config.jaeger_service.clone(),
             next_discovery: smol::Timer::after(Duration::from_secs(1)),
             next_discovery_period: Duration::from_secs(1),
             incoming_connections,
@@ -533,7 +518,6 @@ impl NetworkService {
         let network_service = Arc::new(NetworkService {
             local_peer_id,
             chain_names,
-            _jaeger_service: config.jaeger_service,
             to_background_tx: Mutex::new(to_background_tx),
         });
 
@@ -741,7 +725,7 @@ impl NetworkService {
         chain_id: ChainId,
         config: codec::StorageProofRequestConfig<impl Iterator<Item = impl AsRef<[u8]> + Clone>>,
     ) -> Result<service::EncodedMerkleProof, ()> {
-        // TODO: logs and jaeger integration
+        // TODO: logs integration
         let (result_tx, result_rx) = oneshot::channel();
 
         let _ = self
@@ -775,7 +759,7 @@ impl NetworkService {
         chain_id: ChainId,
         config: codec::CallProofRequestConfig<'_, impl Iterator<Item = impl AsRef<[u8]>>>,
     ) -> Result<service::EncodedMerkleProof, ()> {
-        // TODO: logs and jaeger integration
+        // TODO: logs integration
         let (result_tx, result_rx) = oneshot::channel();
 
         let _ = self
@@ -1582,13 +1566,6 @@ async fn background_task(mut inner: Inner) {
                     inner.network.block_number_bytes(chain_id),
                 ) {
                     Ok(decoded_header) => {
-                        let mut _jaeger_span = inner.jaeger_service.block_announce_receive_span(
-                            &inner.local_peer_id,
-                            &peer_id,
-                            decoded_header.number,
-                            &decoded_header.hash(inner.network.block_number_bytes(chain_id)),
-                        );
-
                         inner.log_callback.log(LogLevel::Debug, format!(
                             "block-announce; peer_id={}; chain={}; hash={}; number={}; is_best={:?}",
                             peer_id, inner.network[chain_id].log_name, HashDisplay(&header_hash), decoded_header.number, decoded.is_best
@@ -2028,19 +2005,6 @@ async fn background_task(mut inner: Inner) {
                         peer_id, inner.network[chain_id].log_name
                     ),
                 );
-                let mut _jaeger_span = inner.jaeger_service.incoming_block_request_span(
-                    &inner.local_peer_id,
-                    &peer_id,
-                    config.desired_count.get(),
-                    if let (1, codec::BlocksRequestConfigStart::Hash(block_hash)) =
-                        (config.desired_count.get(), &config.start)
-                    {
-                        Some(block_hash)
-                    } else {
-                        None
-                    },
-                );
-
                 // TODO: is it a good idea to await here while the lock is held and freezing the entire networking background task?
                 let response = blocks_request_response(
                     &inner.network[chain_id].database,
