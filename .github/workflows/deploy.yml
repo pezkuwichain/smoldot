@@ -53,33 +53,6 @@ jobs:
     - run: docker push ghcr.io/smol-dot/full-node:main
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-  build-js-doc:
-    runs-on: ubuntu-latest
-    container:
-      image: rust:1.92
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          path: repo
-      - run: rustup target add wasm32-unknown-unknown
-      - uses: actions/setup-node@v6.1.0
-        with:
-          node-version: current
-      - run: npm install
-        working-directory: ./repo/wasm-node/javascript
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: ./repo -> target
-      - run: npm run doc
-        working-directory: ./repo/wasm-node/javascript
-      - run: |
-          mkdir -p ./doc
-          mv ./repo/wasm-node/javascript/dist/doc/* ./doc
-      - uses: actions/upload-artifact@v6
-        with:
-          name: javascript-documentation
-          path: ./doc/
-
   build-rust-doc:
     runs-on: ubuntu-latest
     container:
@@ -130,7 +103,7 @@ jobs:
 
   docs-publish:
     runs-on: ubuntu-latest
-    needs: [build-js-doc, build-rust-doc, build-tests-coverage]
+    needs: [build-rust-doc, build-tests-coverage]
     permissions:
       contents: write   # Necessary to push on the `gh-pages` branch.
     steps:
@@ -138,14 +111,9 @@ jobs:
         with:
           path: repo
       - run: |
-          mkdir -p ./upload/doc-javascript
           mkdir -p ./upload/doc-rust
           mkdir -p ./upload/tests-coverage
           touch ./upload/.nojekyll
-      - uses: actions/download-artifact@v7
-        with:
-          name: javascript-documentation
-          path: ./upload/doc-javascript
       - uses: actions/download-artifact@v7
         with:
           name: rust-documentation
